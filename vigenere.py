@@ -73,7 +73,6 @@ def decode(string):
     for l in range(length):
         gen(0, l)
 
-    # Finds most likely shift of key by telling gibberish from english using proportions of letters in the language
     prop = [.08497, .02072, .04539, .03384, .11161, .01812, .02471, .03003, .07545, .00197, .01102, .05489, .03013, .06654, .07164, .03167, .00196, .07581, .05735, .06951, .03631, .01007, .0129, .0029, .01778, .00272]
     max = 0
     key = ""
@@ -83,10 +82,12 @@ def decode(string):
         for i in k:
             shifts.append(ord(i)-65)
         letter = []
+        # Counts letters based on key
         for i in range(26):
             letter.append(0)
             for l in range(length):
                 letter[i] += letters[length-1][l][(i+shifts[l])%26]
+        # Finds most likely shift by telling gibberish from english using proportions of letters in the language
         for i in range(26):
             index = 0
             for j in range(26):
