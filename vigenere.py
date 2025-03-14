@@ -22,7 +22,7 @@ def decode(string):
     strings = []
     letters = []
     for l in range(1, min(len(clean) // 15 + 1, 10)):  # Different lengths of key
-        # Creates strings
+        # Creates substrings
         strings.append([])
         letters.append([])
         for i in range(l):
@@ -31,7 +31,7 @@ def decode(string):
             strings[l - 1][i % l] += clean[i]
         avg_index = 0
         for i in range(l):
-            # Counts number of letters
+            # Counts letters
             letters[l - 1].append([])
             for j in range(26):
                 letters[l - 1][i].append(0)
@@ -47,7 +47,7 @@ def decode(string):
             max = avg_index
             length = l
 
-    # Compute mutual index of coincidence
+    # Compute mutual index of coincidence to find most likely shifts
     for l in range(length):
         dist.append(0)
         edges.append([[] for j in range(length)])
@@ -101,7 +101,7 @@ def decode(string):
         message += chr((ord(clean[i]) - ord(key[i%length]) - shift)%26+65)
     return sentence_space(message)
 
-# Creates possible keys recursively by fixing a base letter
+# Creates possible keys recursively by fixing a base letter and generating all 2^(l-1) or 3^(l-1) permutations
 def gen(index, base):
     if index == len(dist):
         key = ""
@@ -140,8 +140,8 @@ def word_splitter(string, start):
     while i < len(string) and current.child[ord(string[i])-65] != None:
         current = current.child[ord(string[i])-65]
         if current.end:
-            previous[i].insert(0, start)
-            if not done[i]:
+            previous[i].insert(0, start) # Adds the index that the word starts in order to build the sentence backwards
+            if not done[i]: # Avoids repetitive computations
                 done[i] = True
                 word_splitter(string, i+1)
         i += 1
