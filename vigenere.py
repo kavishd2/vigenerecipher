@@ -156,6 +156,7 @@ class Shift(object):
     def __lt__(self, other):
         return self.index < other.index
 
+
 class Node(object):
     def __init__(self, end=False):
         self.child = [None] * 26
