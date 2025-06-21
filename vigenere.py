@@ -15,13 +15,16 @@ def encode(message, key):
 
 
 def decode(string):
-    max = 0
+    # Removes spaces
     clean = ""
     for i in string:
         if 65 <= ord(i) <= 90:
             clean += i
+
+    # Variables to perform analysis
     strings = []
     letters = []
+    max_index = 0
     for l in range(1, min(len(clean) // 15 + 1, 10)):  # Different lengths of key
         # Creates substrings
         strings.append([])
@@ -30,22 +33,26 @@ def decode(string):
             strings[l - 1].append("")
         for i in range(len(clean)):
             strings[l - 1][i % l] += clean[i]
+            
         avg_index = 0
         for i in range(l):
-            # Counts letters
+            # Counts letters for each substring
             letters[l - 1].append([])
             for j in range(26):
                 letters[l - 1][i].append(0)
             for j in strings[l - 1][i]:
                 letters[l - 1][i][ord(j) - 65] += 1
-            # Calculates index of coincidence
+                
+            # Calculates index of coincidence of each substring
             index = 0
             for j in range(26):
                 index += letters[l - 1][i][j] * (letters[l - 1][i][j] - 1)
             index /= (len(strings[l - 1][i]) * (len(strings[l - 1][i]) - 1))
             avg_index = (avg_index * i + index) / (i + 1)
-        if max < avg_index:
-            max = avg_index
+
+        # Finds actual length of key
+        if max_index < avg_index:
+            max_index = avg_index
             length = l
 
     # Compute mutual index of coincidence to find most likely shifts
