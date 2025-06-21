@@ -1,3 +1,4 @@
+# Encodes in blocks of 5 and ignores non letters. Assumes key is given in upper case.
 def encode(message, key):
     code = ""
     count = 0
