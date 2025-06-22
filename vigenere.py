@@ -13,7 +13,6 @@ def encode(message, key):
                 code += " "
     return code
 
-# Used to find most likely shifts for each permutation
 class Shift:
     def __init__(self, shift, index):
         self.shift = shift
@@ -43,6 +42,7 @@ class Trie:
             current = current.child[ord(i)-97]
         current.end = True
 
+    # Prints all the words in the trie  
     def string_help(self, node, string):
         if node.end:
             print(string)
@@ -52,7 +52,7 @@ class Trie:
 
 class VigenereDecoder:
     def __init__(self):
-        self.dist = []
+        self.shifts = []
         self.edges = []
         self.keys = set()
         self.done = []
@@ -100,55 +100,59 @@ class VigenereDecoder:
                 max_index = avg_index
                 length = l
     
-        # Compute mutual index of coincidence to find most likely shifts
+        # Instantiates variables needed to find keys
         for l in range(length):
-            dist.append(0)
-            edges.append([[] for j in range(length)])
-        for l in range(length):
-            edges[l][l].append(0)
+            self.shifts.append(0)
+            self.edges.append([[] for j in range(length)])
+            self.edges[l][l].append(0)
+
+        # Computes mutual index of coincidence to find most likely shifts
         for l in range(length):
             for i in range(l + 1, length):
                 max = []
-                for k in range(26):
+                for j in range(26):
                     index = 0
-                    for j in range(26):
-                        index += letters[length - 1][l][j] * letters[length - 1][i][(j + k) % 26]
+                    for k in range(26):
+                        index += letters[length - 1][l][k] * letters[length - 1][i][(j + k) % 26]
                     index /= (len(strings[length - 1][l]) * len(strings[length - 1][i]))
-                    max.append(Shift(k, index))
+                    max.append(Shift(j, index))
                 max.sort(reverse=True)
-                edges[l][i].append(max[0].shift)
-                edges[i][l].append(-max[0].shift%26)
-                edges[l][i].append(max[1].shift)
-                edges[i][l].append(-max[1].shift%26)
+                self.edges[l][i].append(max[0].shift)
+                self.edges[i][l].append(-max[0].shift%26)
+                self.edges[l][i].append(max[1].shift)
+                self.edges[i][l].append(-max[1].shift%26)
                 if length < 7:
-                    edges[l][i].append(max[2].shift)
-                    edges[i][l].append(-max[2].shift % 26)
+                    self.edges[l][i].append(max[2].shift)
+                    self.edges[i][l].append(-max[2].shift % 26)
         for l in range(length):
             gen(0, l)
     
         prop = [.08497, .02072, .04539, .03384, .11161, .01812, .02471, .03003, .07545, .00197, .01102, .05489, .03013, .06654, .07164, .03167, .00196, .07581, .05735, .06951, .03631, .01007, .0129, .0029, .01778, .00272]
-        max = 0
+        max_likelihood = 0
         key = ""
         shift = 0
-        for k in keys:
-            shifts = []
+        for k in self.keys:
+            # Counts total letters based on key
+            shifted = []
             for i in k:
-                shifts.append(ord(i)-65)
+                shifted.append(ord(i)-65)
             letter = []
-            # Counts letters based on key
             for i in range(26):
                 letter.append(0)
                 for l in range(length):
-                    letter[i] += letters[length-1][l][(i+shifts[l])%26]
+                    letter[i] += letters[length-1][l][(i+shifted[l])%26]
+                    
             # Finds most likely shift by telling gibberish from english using proportions of letters in the language
             for i in range(26):
                 index = 0
                 for j in range(26):
-                    index += letter[(j+i)%26]*prop[j]
-                if max < index:
-                    max = index
+                    likelihood += letter[(j+i)%26]*prop[j]
+                if max_likelihood < likelihood:
+                    max_likelihood = likelihood
                     key = k
                     shift = i
+
+        # Decodes sentence
         message = ""
         for i in range(len(clean)):
             message += chr((ord(clean[i]) - ord(key[i%length]) - shift)%26+65)
@@ -156,46 +160,46 @@ class VigenereDecoder:
     
     # Creates possible keys recursively by fixing a base letter and generating all 2^(l-1) or 3^(l-1) permutations
     def gen(index, base):
-        if index == len(dist):
+        if index == len(self.shifts):
             key = ""
-            for l in dist:
+            for l in self.shifts:
                 key += chr(l+65)
-            keys.add(key)
+            self.keys.add(key)
         else:
             if index == 0:
                 for i in edges[0][base]:
-                    dist[base] = i
+                    self.shifts[base] = i
                     gen(index+1,base)
-                    dist[base] = 0
+                    self.shifts[base] = 0
             else:
                 for i in edges[base][index]:
-                    dist[index] = (dist[base] + i) % 26
+                    self.shifts[index] = (self.shifts[base] + i) % 26
                     gen(index + 1, base)
-                    dist[base] = 0
+                    self.shifts[base] = 0
     
-    # Adds spaces to sentence
+    # Adds spaces to sentence with the longest possible words from the start
     def sentence_space(string):
         for i in range(len(string)):
-            done.append(False)
-            previous.append([])
+            self.done.append(False)
+            self.previous.append([])
         word_splitter(string, 0)
         i = len(string)-1
         sentence = ""
         while i != -1:
-            sentence = string[previous[i][0]:i+1] + " " + sentence
-            i = previous[i][0] - 1
+            sentence = string[self.previous[i][0]:i+1] + " " + sentence
+            i = self.previous[i][0] - 1
         return sentence
     
     # Finds words from a starting index to recursively build sentence
     def word_splitter(string, start):
         i = start
-        current = trie.root
+        current = self.trie.root
         while i < len(string) and current.child[ord(string[i])-65] != None:
             current = current.child[ord(string[i])-65]
             if current.end:
-                previous[i].insert(0, start) # Adds the index that the word starts in order to build the sentence backwards
-                if not done[i]: # Avoids repetitive computations
-                    done[i] = True
+                self.previous[i].insert(0, start) # Adds the index that the word starts in order to build the sentence backwards
+                if not self.done[i]: # Avoids repetitive computations
+                    self.done[i] = True
                     word_splitter(string, i+1)
             i += 1
         
