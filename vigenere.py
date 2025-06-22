@@ -57,7 +57,6 @@ class VigenereDecoder:
         self.keys = set()
         self.done = []
         self.previous = []
-        self.trie = Trie()
         
     def decode(string):
         # Removes spaces
@@ -193,7 +192,7 @@ class VigenereDecoder:
     # Finds words from a starting index to recursively build sentence
     def word_splitter(string, start):
         i = start
-        current = self.trie.root
+        current = trie.root
         while i < len(string) and current.child[ord(string[i])-65] != None:
             current = current.child[ord(string[i])-65]
             if current.end:
@@ -204,6 +203,7 @@ class VigenereDecoder:
             i += 1
         
 # Test cases
+trie = Trie()
 code = encode("The eyes of texas are upon you, all the live long day. The eyes of texas are upon you, you cannot get away. Do not think you can escape them by night or early in the morn. The eyes of texas are upon you til Gabriel blows his horn", "LONGHORN")
 print(code)
 decoder = VigenereDecoder()
